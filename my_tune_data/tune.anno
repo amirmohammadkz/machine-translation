@@ -1,0 +1,336 @@
+  define the function join_tokens with 2 arguments: tokens and trim set to boolean False.
+  join tokens elements into a string, substitute it for message.
+  if trim is true,
+  call the function trim_whitespace with an argument message, substitute the result for message.
+  return message.
+  instantiate Lexer class with 2 argumets src and origin, call the method tokenize from it, for every t in the result,
+  if incomment is true,
+  if t.token_type equals TOKEN_BLOCK and t.contents equals 'endcomment',
+  join comment elements into a string, substitute it for content.
+  translators_comment_start is None.
+  for every lineno and line is enumerated result of the method content.splitlines, called with an argument boolean True,
+  call the method line.lstrip, if the result starts with TRANSLATOR_COMMENT_MARK,
+  substitute lineno for translators_comment_start.
+  for every lineno and line is enumerated result of the method content.splitlines, called with an argument boolean True,
+  if translators_comment_start is not None and lineno is greater than or equal to translators_comment_start,
+  substitute '%s' in string ' # %s' with line, write it to out file.
+  if not,
+  write string ' #\n' to out file.
+  incomment is boolean False.
+  comment is an empty list.
+  if not,
+  append t.contents to comment.
+  otherwise if intrans is true,
+  if t.token_type equals TOKEN_BLOCK,
+  call the function endblock_re.match with an argument t.contents, substitute the result for endbmatch.
+  call the function plural_re.match with an argument t.contents, substitute the result for pluralmatch.
+  if endbmatch is true,
+  if inplural is true,
+  if message_context is true,
+  substitute '%r' in string ' npgettext(%r, %r, %r,count) ' with message_context, result of the function join_tokens,
+  called with 2 arguments: singular and trimmed and result of the function join_tokens called with 2 arguments: plural and trimmed,   write the result to out.   if not,
+  substitute '%r' in string ' ngettext(%r, %r, count) ' with result of the function join_tokens, called with 2 arguments: singular,
+  and trimmed and result of the function join_tokens called with 2 arguments: plural and trimmed, write the result to out.   for every part in singular,
+  call the method blankout with 2 arguments: part and 'S', write the result to out.
+  for every part in plural,
+  call the method blankout with 2 arguments: part and 'P', write the result to out.
+  if not,
+  if message_context is true,
+  substitute '%r' in string ' pgettext(%r, %r) ' with message_context and result of the function join_tokens,
+  called with 2 arguments: singular and trimmed, write the result to out.   if not,
+  substitute '%r' in string ' gettext(%r) ' with  result of the function join_tokens, called with 2 arguments: singular,
+  and trimmed, write the result to out.   for every part in singular,
+  call the method blankout with 2 arguments: part and 'S', write the result to out.
+  message_context is None.
+  intrans is boolean False.
+  inplural is boolean False.
+  singular is an empty list.
+  plural is an empty list.
+  otherwise if pluralmatch is true,
+  inplural is boolean True.
+  if not,
+  filemsg is an empty string.
+  if origin is true,
+  filemsg is a string 'file %s, ', where '%s' is replaced with origin.
+  raise an SyntaxError with an argument string "Translation blocks must not include other block tags: %s (%sline %d)",
+  formated with t.contents, filemsg and t.lineno.   otherwise if t.token_type equals TOKEN_VAR,
+  if inplural is true,
+  append string '%%(%s)s' to plural, where '%s' is replaced with t.contents.
+  if not,
+  append string '%%(%s)s' to singular, where '%s' is replaced with t.contents.
+  if t.token_type == TOKEN_TEXT:
+  call the method one_percent_re.sub with 2 arguments: string '%%' and t.contents, substitute the result for contents.
+  if inplural is true,
+  append contents to plural.
+  if not,
+  append contents to singular.
+  if not,
+  if comment_lineno_cache is not None,
+  count occurrences of '\n' in t.contents, add the result to t.lineno, substitute the result for cur_lineno.
+  if comment_lineno_cache equals cur_lineno.
+  if t.token_type is not equal to TOKEN_COMMENT,
+  for every c in lineno_comment_map dictionary value under the comment_lineno_cache key,
+  filemsg is an empty string.
+  if origin is true,
+  filemsg is a string 'file %s, ', where '%s' is replaced with origin.
+  warn_msg is a string "The translator-targeted comment '%s' (%sline %d) was ignored, because it wasn't the last item on the line.",
+  formated with c, filemsg and comment_lineno_cache.   call the function warnings.warn with 2 arguments: warn_msg and TranslatorCommentWarning.
+  value under the comment_lineno_cache key of the lineno_comment_map dictionary is an empty string.
+  if not,
+  join lineno_comment_map dictionary value under the comment_lineno_cache key into a string, separated with ' | ',
+  format with it a string '# %s', write it to out.   comment_lineno_cache is None,
+   if t.token_type equals TOKEN_BLOCK,
+  call the function inline_re.match with an argument t.contents, substitute the result for imatch.
+  call the function block_re.match with an argument t.contents, substitute the result for bmatch.
+  call the function constant_re.findall with an argument t.contents, substitute the result for cmatches.
+  if imatch is true,
+  call the method imatch.group with an argument integer 1, substitute the result for g.
+  if first element of g equals a string '"',
+  strip g of '"' from both ends,
+  otherwise if first element of g equals a string "'",
+  strip g of "'" from both ends,
+  call the method one_percent_re.sub with 2 arguments: string '%%' and g, substitute the result for .
+  call the method imatch.group with an argument integer 1, if it evaluates to true,
+  call the method imatch.group with an argument integer 2, use the result as an argument for the call to the method context_re.match,
+  substitute the result for context_match.   call the method context_match.group with an argument integer 1, substitute the result for message_context.
+  if first element of message_context equals to character '"',
+  strip message_context of '"' characters from both ends, substitute the result for message_context.
+  otherwise if, first element of message_context is equal to "'",
+  strip message_context of "'" characters from both ends, substitute the result for message_context.
+  format string ' pgettext(%r, %r) ' with message_context and g, write it to out.
+  message_context is None.
+  if not,
+  format string ' gettext(%r) ' with g, write it to out.
+  otherwise if bmatch is true,
+  call the method constant_re.findall with an argument t.contents, for every fmatch in the result,
+  format string ' _(%s) ', with fmatch, write it to out.
+  call the method bmatch.group with an argument integer 1, if it evaluates to true,
+  call the method bmatch.group with an argument integer 1, use the result as an argument for the call to the function context_re.match,
+  substitute the result for context_match.   call the method context_match.group with an argument integer 1, substitute the result for message_context.
+  if first element of message_context equals to character '"',
+  strip message_context of '"' characters from both ends, substitute the result for message_context.
+  otherwise if first element of message_context equals to character "'",
+  strip message_context of "'" characters from both ends, substitute the result for message_context.
+  intrans is boolean True.
+  inplural is boolean False.
+  if string 'trimmed' is contained in result of the method t.split_contents, trimmed is boolean True, otherwise is boolean False.
+  singular is an empty list.
+  plural is an empty list.
+  otherwise if cmatches is true,
+  for every cmatch in cmatches,
+  format string ' _(%s) ', with fmatch, write it to out.
+  otherwise if t.contents equals a string 'comment',
+  incomment is boolean True.
+  if not,
+  call the function blankout with 2 arguments: t.contents and 'B', write the result to out.
+  otherwise if t.token_type equals TOKEN_VAR,
+  split t.contents by '|' symbol, substitute the result for parts,
+  call the method constant_re.match with first element of parts as an argument, substitute the result for cmatch.
+  if cmatch is true,
+  call the method cmatch.group with an argument integer 1, format with the result string ' _(%s) ', write it to out.
+  for every p in parts without the first element,
+  find index of the occurrence of string ':_(' in p, if its greater or equal to integer 0,
+  split p into two parts at the first ':', use the second element of the result to format string ' _(%s) ', write it to out.
+  if not,
+  call the function blankout with 2 arguments: p and 'F', write the result to out.
+  otherwise if t.token_type equals TOKEN_COMMENT,
+  strip t.contents from the left side of whitespaces, if the result starts with TRANSLATOR_COMMENT_MARK,
+  call the method lineno_comment_map.setdefault with 2 arguments: t.lineno and an empty list, append t.contents to the result.
+  substitute t.lineno for comment_lineno_cache.
+  if not,
+  call the function blankout with 2 arguments: t.contents and 'X', write the result to out.
+  call the method out.getvalue, return the result.
+  define the function parse_accept_lang_header with an argument lang_string.
+  result is an empty list.
+  convert lang_string to lowercase, split by the result string accept_language_re, substitute the result for pieces.
+  if last element of pieces is true,
+  return an empty list.
+  for every i in range of integers from integer 0 to the length of pieces decremented by one, with step of integer 3,
+  substitute 3 successive elements starting from the i-th index of pieces for first, lang and priority, respectively.
+  if first is true,
+  return an empty list.
+  if priority is true,
+  try,
+  convert priority into a floating point integer, substitute it for priority.
+  if ValueError exception is caught,
+  return an empty list.
+  if priority is false,
+  priority is floating point number 1.0.
+  append a tuple with 2 entries lang and priority to result.
+  sort result in reversed order by the key as lambda function with an argument k and reeturn value second element of k.
+  return result.
+  import module copy.
+  derive the class Node from object base class.
+  default is a string 'DEFAULT'.
+  define the method __init__ with 4 arguments: self, children set to None, connector set to None and negated set to boolean False.
+  if children is true, copy children list to self.children, otherwise self.children is an empty list.
+  if connector is true, substitute it for self.connector, otherwise substitute self.default for self.connector.
+  substitute negated for self.negated.
+  decorator classmethod,
+  define the method _new_instance with 4 arguments: (cls, children set to None, connector set to None and negated set to boolean False.
+  obj is an instance of Node class, created with 3 arguments: children, connector and negated.
+  substitute cls for obj.__class__.
+  return obj.
+  define the method __str__ with an argument self.
+  if self.negated,
+  return string '(NOT (%s: %s))', formated with self.connector and string created by joining c into a string, separated by ', ',
+  for every c in self.children.   return string '(%s: %s)', formated with self.connector and string created by joining c into a string, separated by ', ',
+  for every c in self.children.   define the method __repr__ with an argument self.
+  return string "<%s: %s>", formated with self.__class__.__name__ and self.
+  define the method __deepcopy__ with 2 arguments: self and memodict.
+  obj is an instance of Node class, created with 2 arguments: connector set to self.connector and negated set to self.negated.
+  substitute self.__class__ for obj.__class__.
+  call the function copy.deepcopy with 2 arguments: self.children and memodict, substitute the result for obj.children.
+  return obj.
+  define the method __len__ with an argument self.
+  return the length of self.children.
+  define the method __bool__ with an argument self.
+  convert self.children into an boolean, return it.
+  define the method __nonzero__ with an argument self.
+  get the type of the self object, on the result call the __bool__ method with an argument self, return the result.
+  define the method __contains__ with 2 arguments: self and other.
+  if other is contained in self.children, return boolean True, otherwise return boolean False.
+  define the method _prepare_data with 2 arguments: self and data.
+  return data.
+  define the method add with 4 arguments: self, data, conn_type and squash set to boolean True.
+  if data is contained in self.children,
+  return data.
+  call the method self._prepare_data with an argument data, substitute the result for data.
+  if squash is false,
+  append data to self.children.
+  return data.
+  if self.connector equals conn_type,
+  if data is instance of Node and data.negated is false, and if data.connector equals conn_type or length of data equals integer 1,
+  extend self.children list with data.children.
+  return self.
+  if not,
+  append data to self.children.
+  return data.
+  if not,
+  call the method self._new_instance with 3 arguments: self.children, self.connector and self.negated, substitute the result for obj.
+  substitute conn_type for self.connector.
+  self.children is an list with 2 elements: obj and data.
+  return data.
+  define the method negate with an argument self.
+  invert self.negated.
+  from __future__ import unicode_literals into default name space.
+  from datetime import timedelta and tzinfo into default name space.
+  import module time.
+  import module warnings.
+  from django.utils.deprecation import RemovedInDjango19Warning into default name space.
+  from django.utils.encoding import force_str,  force_text and DEFAULT_LOCALE_ENCODING into default name space.
+  call the function warnings.warn with 3 arguments: string "django.utils.tzinfo will be removed in Django 1.9. "
+  "Use django.utils.timezone instead.", RemovedInDjango19Warning and stacklevel set to 2.   derive the class FixedOffset from the tzinfo base class.
+  define the method __init__ with 2 arguments: self and offset.
+  call the function warnings.warn with 2 arguments: "django.utils.tzinfo.FixedOffset will be removed in Django 1.9. "
+  "Use django.utils.timezone.get_fixed_timezone instead." and RemovedInDjango19Warning.   if offset is an instance of timedelta class,
+  substitute offset for self.__offset.
+  substitute self.__offset.seconds for offset.
+  if not,
+  call the function timedelta with an argument minutes set to offset, substitute the result for self.__offset.
+  if offset is lesser than integer 0, sign is set to '-', otherwise sign is '+',
+  self.__name is a string "%s%02d%02d", replace '%s' with sign, '%02d' is replaced with absolute value of offset divided by 60,
+  and placed into 2 character spaces, and '%02d' is replaced with reminder of the division of absolute offset by integer 60,   and placed into 2 character spaces.   define the method __repr__ with an argument self.
+  return self.__name.
+  define the method __getinitargs__ with an argument self.
+  return a tuple with an element self.__offset.
+  define the method utcoffset with 2 arguments self and dt.
+  return self.__offset.
+  define the method tzname with 2 arguments self and dt.
+  return self.__name.
+  define the method dst with 2 arguments self and dt.
+  call the function timedelta with an argument integer 0, return the result.
+  derive the class LocalTimezone from the tzinfo base class.
+  define the method __init__ with 2 arguments self and dt.
+  call the function warnings.warn with 2 arguments: string "django.utils.tzinfo.LocalTimezone will be removed in Django 1.9. "
+  "Use django.utils.timezone.get_default_timezone instead." and RemovedInDjango19Warning.   call the method tzinfo.__init__ with an argument self.
+  substitute dt for self.__dt.
+  call the method self.tzname with an argument dt, substitute the result for self._tzname.
+  define the method __repr__ with an argument self.
+  call the function force_str with an argument self._tzname, return the result.
+  define the method __getinitargs__ with an argument self.
+  return a tuple with an element self.__dt.
+  define the method utcoffset with 2 arguments self and dt.
+  call the nethod self._isdst with an argument dt, if it evaluates to true,
+  call the function timedelta with an argument seconds as negative time.altzone, return the result.
+  if not,
+  call the function timedelta with an argument seconds as negative time.timezone, return the result.
+  define the method dst with 2 arguments self and dt.
+  call the nethod self._isdst with an argument dt, if it evaluates to true,
+  call the function timedelta with an argument seconds as negative time.timezone, subtract the result from the result of the call,
+  to the function timedelta called with an argument seconds as negative time.altzone, return the result.   if not,
+  call the function timedelta with an argument integer 0, return the result.
+  define the method tzname with 2 arguments self and dt.
+  if dt is None is_dst is boolean False, otherwise call the method self._isdst with an argument dt, substitute the result for is_dst.
+  try,
+  call the function force_text with 2 arguments: value under the is_dst key of the time.tzname and DEFAULT_LOCALE_ENCODING,
+  return the result.   if UnicodeDecodeError exception is caught,
+  return None.
+  define the method _isdst with 2 arguments self and dt.
+  tt is an tuple with 9 elements: dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, result of the function dt.weekday,
+  integer 0 and integer 0.   try,
+  call the method time.mktime with an argument tt, substitute the result for stamp.
+  if OverflowError or ValueError exceptions are caught,
+  create a tuple out a tuple with an element integer 2037 and a list tt elements without the first element, substitute the result for tt.
+  call the method time.mktime with an argument tt, substitute the result for stamp.
+  call the method time.localtime with an argument stamp, substitute the result for tt.
+  if tt.tm_isdst is greater than intger 0, return boolean True, otherwise return boolean False.
+  from __future__ import absolute_import into default name space.
+  import module warnings.
+  from django.utils.deprecation import RemovedInDjango19Warning into default name space.
+  call the function warnings.warn with 3 arguments: string "django.utils.unittest will be removed in Django 1.9.",
+  RemovedInDjango19Warning and stacklevel as integer 2.   try,
+  from unittest2 import everything.
+  if ImportError exception is caught,
+  from unittest import import everything.
+  from __future__ import unicode_literals into default name space.
+  import module datetime.
+  import module os.
+  import module subprocess.
+  define the function get_version with version set to None as argument.
+  call the get_complete_version function with version as argument, store the result in version.
+  call the get_major_version wit version as argument, store the result in major.
+  sub is an empty string.
+  if fourth element of version equals to string 'alpha' and fight element of version equals to integer 0,
+  call the function get_git_changeset, store the result in git_changeset.
+  if git_changeset is true,
+  convert git_changeset to string, append it to the string '.dev', replace it for sub.
+  otherwise if fourth element of version does not equals to 'final',
+  mapping is a dictionary with 3 initial entries: 'a' for 'alpha', 'b' for 'beta' and 'c' for 'rc'.
+  use fourth element of version as a key to get the value from mapping dictionary, append to it fourth element of version converted to string, substitute it for sub.
+  sum major and sub, return the result converted to string.
+  define the function get_major_version with an argument version defaulting to None.
+  call the get_complete_version with an argument version, store the result in version.
+  assign integer 2 to parts if third element of version equals to zero, otherwise assign it integer 3.
+  convert x into a string for every x in list of version elements up to the parts index, join the previous into a string separated by '.', assign the result to major.
+  return major.
+  define the function get_complete_version with in argument version, defaulting to None.
+  if version is None,
+  from django import VERSION as version into default name space.
+  if not,
+  if length of version does not equals to integer 5, raise an exception.
+  if fourth element of version does not equals to string 'alpha' or 'beta' or 'rc' or 'final', raise an exception.
+  return version
+  define the function get_git_changeset.
+  if get_git_changeset has an attribute 'cache',
+  return get_git_changeset.cache.
+  get the absolute path of the __file__, repo_dir is name of the directory two leveles above it.
+  call the subprocess.Popen function with, 'git log --pretty=format:%ct --quiet -1 HEAD', stdout set to subprocess.PIPE,
+  stderr set to subprocess.PIPE, shell set to boolean True, cwd set to repo_dir and universal_newlines set to boolean True,   as arguments, substitute the result for git_log.   evaluate the method git_log.communicate, substitute first element of the result for timestamp.
+  try
+  call the datetime.datetime.utcfromtimestamp with timestamp converted to an integer as argument, substitute result for timestamp.
+  if ValueError exception is caught,
+  changeset is None.
+  if not,
+  call the timestamp.strftime with string '%Y%m%d%H%M%S' as an argument, substitute the result for changeset.
+  substitute changeset for get_git_changeset.cache.
+  return changeset.
+  from xml.sax.saxutils import XMLGenerator into default name space.
+  derive the class SimplerXMLGenerator form the XMLGenerator base class.
+  define the method addQuickElement with 4 arguments: self, name, contents set to None and attrs set to None.
+  if attrs is None,
+  attrs is an empty dictionary.
+  cal the method self.startElement with 2 arguments: name and attrs.
+  if contents is not None,
+  call the method self.characters with an argument contents.
+  call the method self.endElement with an argument name.

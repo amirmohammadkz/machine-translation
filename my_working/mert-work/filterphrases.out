@@ -1,0 +1,2 @@
+To run the decoder, please call:
+  moses -f /home/coldfire/machine_translation/my_working/mert-work/filtered/moses.ini -i /home/coldfire/machine_translation/my_working/mert-work/filtered/input.12307

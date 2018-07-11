@@ -1,0 +1,336 @@
+def join _ tokens ( tokens , trim = False ) :
+message = &apos; &apos; . join ( tokens )
+if trim :
+message = trim _ whitespace ( message )
+return message
+for t in Lexer ( src , origin ) . tokenize ( ) :
+if incomment :
+if t . token _ type = = TOKEN _ BLOCK and t . contents = = &apos; endcomment &apos; :
+content = &apos; &apos; . join ( comment )
+Translators _ comment _ start = None
+for lineno , line in enumerate ( content . splitlines ( True ) ) :
+if line . lstrip ( ) . startswith ( TRANSLATOR _ COMMENT _ MARK ) :
+Translators _ comment _ start = lineno
+for lineno , line in enumerate ( content . splitlines ( True ) ) :
+if Translators _ comment _ start is not None and lineno &gt; = Translators _ comment _ start :
+out . write ( &apos; # % s &apos; % line )
+else :
+out . write ( &apos; # \ n &apos; )
+incomment = False
+COMMENT = &#91; &#93;
+else :
+COMMENT . append ( t . contents )
+elif intrans :
+if t . token _ type = = TOKEN _ BLOCK :
+endbmatch = endblock _ re . match ( t . contents )
+pluralmatch = plural _ re . match ( t . contents )
+if endbmatch :
+if inplural :
+if message _ context :
+out . write ( &apos; npgettext ( % r , % r , % r , count ) &apos; % ( message _ context , join _ tokens ( singular , trimmed ) , join _ tokens ( plural , trimmed ) ) )
+else :
+out . write ( &apos; ngettext ( % r , % r , count ) &apos; % ( join _ tokens ( singular , trimmed ) , join _ tokens ( plural , trimmed ) ) )
+for part in singular :
+out . write ( blankout ( part , &apos; S &apos; ) )
+for part in plural :
+out . write ( blankout ( part , &apos; P &apos; ) )
+else :
+if message _ context :
+out . write ( &apos; pgettext ( % r , % r ) &apos; % ( message _ context , join _ tokens ( singular , trimmed ) ) )
+else :
+out . write ( &apos; gettext ( % r ) &apos; % join _ tokens ( singular , trimmed ) )
+for part in singular :
+out . write ( blankout ( part , &apos; S &apos; ) )
+message _ context = None
+intrans = False
+inplural = False
+singular = &#91; &#93;
+plural = &#91; &#93;
+elif pluralmatch :
+inplural = True
+else :
+filemsg = &apos; &apos;
+if origin :
+filemsg = &apos; file % s , &apos; % origin
+RAISE SyntaxError ( &quot; translation blocks must not include other block tags : % s ( % sline % d ) &quot; % ( t . contents , filemsg , t . lineno ) )
+elif t . token _ type = = TOKEN _ VAR :
+if inplural :
+plural . append ( &apos; % % ( % s ) s &apos; % t . contents )
+else :
+singular . append ( &apos; % % ( % s ) s &apos; % t . contents )
+elif t . token _ type = = TOKEN _ TEXT :
+contents = one _ percent _ re . sub ( &apos; % % &apos; , t . contents )
+if inplural :
+plural . append ( contents )
+else :
+singular . append ( contents )
+else :
+if comment _ lineno _ cache is not None :
+cur _ lineno = t . lineno + t . contents . count ( &apos; \ n &apos; )
+if comment _ lineno _ cache = = cur _ lineno :
+if t . token _ type ! = TOKEN _ COMMENT :
+for c in lineno _ comment _ map &#91; comment _ lineno _ cache &#93; :
+filemsg = &apos; &apos;
+if origin :
+filemsg = &apos; file % s , &apos; % origin
+warn _ msg = ( &quot; The translator-targeted comment &apos; % s &apos; &quot; &quot; ( % sline % d ) was ignored , because it wasn &apos;t the last item &quot; &quot; on the line . &quot; ) % ( c , filemsg , comment _ lineno _ cache )
+warnings . warn ( warn _ msg , TranslatorCommentWarning )
+lineno _ comment _ map &#91; comment _ lineno _ cache &#93; = &#91; &#93;
+else :
+out . write ( &apos; # % s &apos; % &apos; &#124; &apos; . join ( lineno _ comment _ map &#91; comment _ lineno _ cache &#93; ) )
+COMMENT _ lineno _ cache = None
+if t . token _ type = = TOKEN _ BLOCK :
+imatch = inline _ re . match ( t . contents )
+bmatch = block _ re . match ( t . contents )
+cmatches = constant _ re . findall ( t . contents )
+if imatch :
+g = imatch . Group ( 1 )
+if g &#91; 0 &#93; = = &apos; &quot; &apos; :
+g = g . strip ( &apos; &quot; &apos; )
+elif g &#91; 0 &#93; = = &quot; &apos; &quot; :
+g = g . strip ( &quot; &apos; &quot; )
+g = one _ percent _ re . sub ( &apos; % % &apos; , g )
+if imatch . Group ( 2 ) :
+context _ match = context _ re . match ( imatch . Group ( 2 ) )
+message _ context = context _ match . Group ( 1 )
+if message _ context &#91; 0 &#93; = = &apos; &quot; &apos; :
+message _ context = message _ context . strip ( &apos; &quot; &apos; )
+elif message _ context &#91; 0 &#93; = = &quot; &apos; &quot; :
+message _ context = message _ context . strip ( &quot; &apos; &quot; )
+out . write ( &apos; pgettext ( % r , % r ) &apos; % ( message _ context , g ) )
+message _ context = None
+else :
+out . write ( &apos; gettext ( % r ) &apos; % g )
+elif bmatch :
+for fmatch in constant _ re . findall ( t . contents ) :
+out . write ( &apos; _ ( % s ) &apos; % fmatch )
+if bmatch . Group ( 1 ) :
+context _ match = context _ re . match ( bmatch . Group ( 1 ) )
+message _ context = context _ match . Group ( 1 )
+if message _ context &#91; 0 &#93; = = &apos; &quot; &apos; :
+message _ context = message _ context . strip ( &apos; &quot; &apos; )
+elif message _ context &#91; 0 &#93; = = &quot; &apos; &quot; :
+message _ context = message _ context . strip ( &quot; &apos; &quot; )
+intrans = True
+inplural = False
+trimmed = &apos; trimmed &apos; in t . split _ contents ( )
+singular = &#91; &#93;
+plural = &#91; &#93;
+elif cmatches :
+for cmatch in cmatches :
+out . write ( &apos; _ ( % s ) &apos; % cmatch )
+elif t . contents = = &apos; comment &apos; :
+incomment = True
+else :
+out . write ( blankout ( t . contents , &apos; B &apos; ) )
+elif t . token _ type = = TOKEN _ VAR :
+parts = t . contents . split ( &apos; &#124; &apos; )
+cmatch = constant _ re . match ( parts &#91; 0 &#93; )
+if cmatch :
+out . write ( &apos; _ ( % s ) &apos; % cmatch . Group ( 1 ) )
+for p in parts &#91; 1 : &#93; :
+if p . find ( &apos; : _ ( &apos; ) &gt; = 0 :
+out . write ( &apos; % s &apos; % p . split ( &apos; : &apos; , 1 ) &#91; 1 &#93; )
+else :
+out . write ( blankout ( p , &apos; F &apos; ) )
+elif t . token _ type = = TOKEN _ COMMENT :
+if t . contents . lstrip ( ) . startswith ( TRANSLATOR _ COMMENT _ MARK ) :
+lineno _ comment _ map . setdefault ( t . lineno , &#91; &#93; ) . append ( t . contents )
+COMMENT _ lineno _ cache = t . lineno
+else :
+out . write ( blankout ( t . contents , &apos; X &apos; ) )
+return out . getvalue ( )
+def parse _ accept _ lang _ header ( lang _ string ) :
+result = &#91; &#93;
+pieces = accept _ language _ re . split ( lang _ string . lower ( ) )
+if pieces &#91; - 1 &#93; :
+return &#91; &#93;
+for i in range ( 0 , len ( pieces ) - 1 , 3 ) :
+first , lang , priority = pieces &#91; i : i + 3 &#93;
+if first :
+return &#91; &#93;
+if priority :
+try :
+priority = float ( priority )
+except ValueError :
+return &#91; &#93;
+if not priority :
+priority = 1.0
+result . append ( ( lang , priority ) )
+result . sort ( key = lambda k : k &#91; 1 &#93; , reverse = True )
+return result
+import copy
+class Node ( object ) :
+default = &apos; default&apos;
+def _ _ init _ _ ( self , children = None , connector = None , negated = False ) :
+self . children = children &#91; : &#93; if children else &#91; &#93;
+self . connector = connector or self . default
+self . negated = negated
+@ classmethod
+def _ new _ instance ( cls , children = None , connector = None , negated = False ) :
+obj = Node ( children , connector , negated )
+obj . _ _ class _ _ = cls
+return obj
+def _ _ str _ _ ( self ) :
+if self . negated :
+return &apos; ( NOT ( % s : % s ) ) &apos; % ( self . connector , &apos; , &apos; . join ( &#91; str ( c ) for c in self . children &#93; ) )
+return &apos; ( % s : % s ) &apos; % ( self . connector , &apos; , &apos; . join ( &#91; str ( c ) for c in self . children &#93; ) )
+def _ _ repr _ _ ( self ) :
+return &quot; &lt; % s : % s &gt; &quot; % ( self . _ _ class _ _ . _ _ name _ _ , self )
+def _ _ deepcopy _ _ ( self , memodict ) :
+obj = Node ( connector = self . connector , negated = self . negated )
+obj . _ _ class _ _ = self . _ _ class _ _
+obj . children = copy . deepcopy ( self . children , memodict )
+return obj
+def _ _ len _ _ ( self ) :
+return len ( self . children )
+def _ _ bool _ _ ( self ) :
+return bool ( self . children )
+def _ _ nonzero _ _ ( self ) :
+return type ( self ) . _ _ bool _ _ ( self )
+def _ _ contains _ _ ( self , other ) :
+return other in self . children
+def _ prepare _ data ( self , data ) :
+return data
+def add ( self , data , conn _ type , squash = True ) :
+if data in self . children :
+return data
+data = self . _ prepare _ data ( data )
+if not squash :
+self . children . append ( data )
+return data
+if self . connector = = conn _ type :
+if ( isinstance ( data , Node ) and not data . negated and ( data . connector = = conn _ type or len ( data ) = = 1 ) ) :
+self . children . extend ( data . children )
+return self
+else :
+self . children . append ( data )
+return data
+else :
+obj = self . _ new _ instance ( self . children , self . connector , self . negated )
+self . connector = conn _ type
+self . children = &#91; obj , data &#93;
+return data
+def negate ( self ) :
+self . negated = not self . negated
+from _ _ future _ _ import unicode _ literals
+from datetime import timedelta , tzinfo
+import time
+import warnings
+from django . utils . deprecation import RemovedInDjango19Warning
+from django . utils . encoding import force _ str , force _ text , DEFAULT _ LOCALE _ ENCODING
+warnings . warn ( &quot; django.utils.tzinfo will be removed in Django 1.9 . &quot; &quot; use django.utils.timezone instead . &quot; , RemovedInDjango19Warning , stacklevel = 2 )
+class FixedOffset ( tzinfo ) :
+def _ _ init _ _ ( self , offset ) :
+warnings . warn ( &quot; django.utils.tzinfo.FixedOffset will be removed in Django 1.9 . &quot; &quot; use django.utils.timezone.get _ fixed _ timezone instead . &quot; , RemovedInDjango19Warning )
+if isinstance ( offset , timedelta ) :
+self . _ _ offset = offset
+offset = self . _ _ offset . seconds / / 60
+else :
+self . _ _ offset = timedelta ( minutes = offset )
+sign = &apos; -&apos; if offset &lt; 0 else &apos; + &apos;
+self . _ _ name = &quot; % s % 02d % 02d &quot; % ( sign , abs ( offset ) / 60 . , abs ( offset ) % 60 )
+def _ _ repr _ _ ( self ) :
+return self . _ _ name
+def _ _ getinitargs _ _ ( self ) :
+return self . _ _ offset ,
+def utcoffset ( self , dt ) :
+return self . _ _ offset
+def tzname ( self , dt ) :
+return self . _ _ name
+def dst ( self , dt ) :
+return timedelta ( 0 )
+class LocalTimezone ( tzinfo ) :
+def _ _ init _ _ ( self , dt ) :
+warnings . warn ( &quot; django.utils.tzinfo.LocalTimezone will be removed in Django 1.9 . &quot; &quot; use django.utils.timezone.get _ default _ timezone instead . &quot; , RemovedInDjango19Warning )
+tzinfo . _ _ init _ _ ( self )
+self . _ _ dt = dt
+self . _ tzname = self . tzname ( dt )
+def _ _ repr _ _ ( self ) :
+return force _ str ( self . _ tzname )
+def _ _ getinitargs _ _ ( self ) :
+return self . _ _ dt ,
+def utcoffset ( self , dt ) :
+if self . _ isdst ( dt ) :
+return timedelta ( seconds = - time . altzone )
+else :
+return timedelta ( seconds = - time . timezone )
+def dst ( self , dt ) :
+if self . _ isdst ( dt ) :
+return timedelta ( seconds = - time . altzone ) - timedelta ( seconds = - time . timezone )
+else :
+return timedelta ( 0 )
+def tzname ( self , dt ) :
+is _ dst = False if dt is None else self . _ isdst ( dt )
+try :
+return force _ text ( time . tzname &#91; is _ dst &#93; , DEFAULT _ LOCALE _ ENCODING )
+except UnicodeDecodeError :
+return None
+def _ isdst ( self , dt ) :
+tt = ( dt . year , dt . month , dt . day , dt . hour , dt . minute , dt . second , dt . weekday ( ) , 0 , 0 )
+try :
+stamp = time . mktime ( tt )
+except ( OverflowError , ValueError ) :
+tt = ( 2037 , ) + tt &#91; 1 : &#93;
+stamp = time . mktime ( tt )
+tt = time . localtime ( stamp )
+return tt . tm _ isdst &gt; 0
+from _ _ future _ _ import absolute _ import
+import warnings
+from django . utils . deprecation import RemovedInDjango19Warning
+warnings . warn ( &quot; django.utils.unittest will be removed in Django 1.9 . &quot; , RemovedInDjango19Warning , stacklevel = 2 )
+try :
+from unittest2 import *
+except ImportError :
+from unittest import *
+from _ _ future _ _ import unicode _ literals
+import datetime
+import os
+import subprocess
+def get _ version ( version = None ) :
+version = get _ complete _ version ( version )
+major = get _ major _ version ( version )
+sub = &apos; &apos;
+if version &#91; 3 &#93; = = &apos; alpha &apos; and version &#91; 4 &#93; = = 0 :
+Git _ changeset = get _ Git _ changeset ( )
+if Git _ changeset :
+sub = &apos; .dev % s &apos; % Git _ changeset
+elif version &#91; 3 &#93; ! = &apos; final &apos; :
+mapping = { &apos; alpha &apos; : &apos; a &apos; , &apos; beta &apos; : &apos; b &apos; , &apos; rc &apos; : &apos; c &apos; }
+sub = mapping &#91; version &#91; 3 &#93; &#93; + str ( version &#91; 4 &#93; )
+return str ( major + sub )
+def get _ major _ version ( version = None ) :
+version = get _ complete _ version ( version )
+parts = 2 if version &#91; 2 &#93; = = 0 else 3
+major = &apos; .&apos; . join ( str ( x ) for x in version &#91; : parts &#93; )
+return major
+def get _ complete _ version ( version = None ) :
+if version is None :
+from django import VERSION as version
+else :
+assert len ( version ) = = 5
+assert version &#91; 3 &#93; in ( &apos; alpha &apos; , &apos; beta &apos; , &apos; rc &apos; , &apos; final &apos; )
+return version
+def get _ Git _ changeset ( ) :
+if hasattr ( get _ Git _ changeset , &apos; cache &apos; ) :
+return get _ Git _ changeset . cache
+repo _ dir = os . path . dirname ( os . path . dirname ( os . path . abspath ( _ _ file _ _ ) ) )
+Git _ log = subprocess . popen ( &apos; Git log --pretty = format : % ct --quiet -1 HEAD &apos; , stdout = subprocess . PIPE , stderr = subprocess . PIPE , shell = True , cwd = repo _ dir , universal _ newlines = True )
+timestamp = Git _ log . communicate ( ) &#91; 0 &#93;
+try :
+timestamp = datetime . datetime . utcfromtimestamp ( int ( timestamp ) )
+except ValueError :
+changeset = None
+else :
+changeset = timestamp . strftime ( &apos; % Y % m % d % H % M % S &apos; )
+get _ Git _ changeset . cache = changeset
+return changeset
+from xml . sax . saxutils import XMLGenerator
+class SimplerXMLGenerator ( XMLGenerator ) :
+def addQuickElement ( self , name , contents = None , attrs = None ) :
+if attrs is None :
+attrs = { }
+self . startElement ( name , attrs )
+if contents is not None :
+self . characters ( contents )
+self . endElement ( name )

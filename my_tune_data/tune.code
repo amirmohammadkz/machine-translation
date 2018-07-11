@@ -1,0 +1,336 @@
+  def join_tokens ( tokens , trim = False ) :
+          message = '' . join ( tokens )
+ if trim :
+              message = trim_whitespace ( message )
+  return message
+   for t in Lexer ( src , origin ) . tokenize ( ) :
+          if incomment :
+              if t . token_type == TOKEN_BLOCK and t . contents == 'endcomment' :
+                  content = '' . join ( comment )
+ translators_comment_start = None
+ for lineno , line in enumerate ( content . splitlines ( True ) ) :
+                      if line . lstrip ( ) . startswith ( TRANSLATOR_COMMENT_MARK ) :
+                          translators_comment_start = lineno
+   for lineno , line in enumerate ( content . splitlines ( True ) ) :
+                      if translators_comment_start is not None and lineno >= translators_comment_start :
+                          out . write ( ' # %s' % line )
+  else :
+                          out . write ( ' #\n' )
+   incomment = False
+ comment = [ ]
+  else :
+                  comment . append ( t . contents )
+   elif intrans :
+              if t . token_type == TOKEN_BLOCK :
+                  endbmatch = endblock_re . match ( t . contents )
+ pluralmatch = plural_re . match ( t . contents )
+ if endbmatch :
+                      if inplural :
+                          if message_context :
+                              out . write ( ' npgettext(%r, %r, %r,count) ' % (  message_context ,  join_tokens ( singular , trimmed ) ,  join_tokens ( plural , trimmed ) ) )
+  else :
+                              out . write ( ' ngettext(%r, %r, count) ' % (  join_tokens ( singular , trimmed ) ,  join_tokens ( plural , trimmed ) ) )
+  for part in singular :
+                              out . write ( blankout ( part , 'S' ) )
+  for part in plural :
+                              out . write ( blankout ( part , 'P' ) )
+   else :
+                          if message_context :
+                              out . write ( ' pgettext(%r, %r) ' % (  message_context ,  join_tokens ( singular , trimmed ) ) )
+  else :
+                              out . write ( ' gettext(%r) ' % join_tokens ( singular ,  trimmed ) )
+  for part in singular :
+                              out . write ( blankout ( part , 'S' ) )
+   message_context = None
+ intrans = False
+ inplural = False
+ singular = [ ]
+ plural = [ ]
+  elif pluralmatch :
+                      inplural = True
+  else :
+                      filemsg = ''
+ if origin :
+                          filemsg = 'file %s, ' % origin
+  raise SyntaxError ( "Translation blocks must not include other block tags: %s (%sline %d)" % ( t . contents , filemsg , t . lineno ) )
+   elif t . token_type == TOKEN_VAR :
+                  if inplural :
+                      plural . append ( '%%(%s)s' % t . contents )
+  else :
+                      singular . append ( '%%(%s)s' % t . contents )
+   elif t . token_type == TOKEN_TEXT :
+                  contents = one_percent_re . sub ( '%%' , t . contents )
+ if inplural :
+                      plural . append ( contents )
+  else :
+                      singular . append ( contents )
+     else :
+                if comment_lineno_cache is not None :
+                  cur_lineno = t . lineno + t . contents . count ( '\n' )
+ if comment_lineno_cache == cur_lineno :
+                      if t . token_type != TOKEN_COMMENT :
+                          for c in lineno_comment_map [ comment_lineno_cache ] :
+                              filemsg = ''
+ if origin :
+                                  filemsg = 'file %s, ' % origin
+  warn_msg = ( "The translator-targeted comment '%s' "  "(%sline %d) was ignored, because it wasn't the last item "  "on the line." ) % ( c , filemsg , comment_lineno_cache )
+ warnings . warn ( warn_msg , TranslatorCommentWarning )
+  lineno_comment_map [ comment_lineno_cache ] = [ ]
+   else :
+                      out . write ( '# %s' % ' | ' . join ( lineno_comment_map [ comment_lineno_cache ] ) )
+  comment_lineno_cache = None
+   if t . token_type == TOKEN_BLOCK :
+                  imatch = inline_re . match ( t . contents )
+ bmatch = block_re . match ( t . contents )
+ cmatches = constant_re . findall ( t . contents )
+ if imatch :
+                      g = imatch . group ( 1 )
+ if g [ 0 ] == '"' :
+                          g = g . strip ( '"' )
+  elif g [ 0 ] == "'" :
+                          g = g . strip ( "'" )
+  g = one_percent_re . sub ( '%%' , g )
+ if imatch . group ( 2 ) :
+                           context_match = context_re . match ( imatch . group ( 2 ) )
+ message_context = context_match . group ( 1 )
+ if message_context [ 0 ] == '"' :
+                              message_context = message_context . strip ( '"' )
+  elif message_context [ 0 ] == "'" :
+                              message_context = message_context . strip ( "'" )
+  out . write ( ' pgettext(%r, %r) ' % ( message_context , g ) )
+ message_context = None
+  else :
+                          out . write ( ' gettext(%r) ' % g )
+   elif bmatch :
+                      for fmatch in constant_re . findall ( t . contents ) :
+                          out . write ( ' _(%s) ' % fmatch )
+  if bmatch . group ( 1 ) :
+                           context_match = context_re . match ( bmatch . group ( 1 ) )
+ message_context = context_match . group ( 1 )
+ if message_context [ 0 ] == '"' :
+                              message_context = message_context . strip ( '"' )
+  elif message_context [ 0 ] == "'" :
+                              message_context = message_context . strip ( "'" )
+   intrans = True
+ inplural = False
+ trimmed = 'trimmed' in t . split_contents ( )
+ singular = [ ]
+ plural = [ ]
+  elif cmatches :
+                      for cmatch in cmatches :
+                          out . write ( ' _(%s) ' % cmatch )
+   elif t . contents == 'comment' :
+                      incomment = True
+  else :
+                      out . write ( blankout ( t . contents , 'B' ) )
+   elif t . token_type == TOKEN_VAR :
+                  parts = t . contents . split ( '|' )
+ cmatch = constant_re . match ( parts [ 0 ] )
+ if cmatch :
+                      out . write ( ' _(%s) ' % cmatch . group ( 1 ) )
+  for p in parts [ 1 : ] :
+                      if p . find ( ':_(' ) >= 0 :
+                          out . write ( ' %s ' % p . split ( ':' , 1 ) [ 1 ] )
+  else :
+                          out . write ( blankout ( p , 'F' ) )
+    elif t . token_type == TOKEN_COMMENT :
+                  if t . contents . lstrip ( ) . startswith ( TRANSLATOR_COMMENT_MARK ) :
+                      lineno_comment_map . setdefault ( t . lineno ,  [ ] ) . append ( t . contents )
+ comment_lineno_cache = t . lineno
+   else :
+                  out . write ( blankout ( t . contents , 'X' ) )
+    return out . getvalue ( )
+    def parse_accept_lang_header ( lang_string ) :
+ result = [ ]
+ pieces = accept_language_re . split ( lang_string . lower ( ) )
+ if pieces [ - 1 ] :
+          return [ ]
+  for i in range ( 0 , len ( pieces ) - 1 , 3 ) :
+          first , lang , priority = pieces [ i : i + 3 ]
+ if first :
+              return [ ]
+  if priority :
+              try :
+                  priority = float ( priority )
+  except ValueError :
+                  return [ ]
+   if not priority :
+              priority = 1.0
+  result . append ( ( lang , priority ) )
+  result . sort ( key = lambda k : k [ 1 ] , reverse = True )
+ return result
+  import copy
+   class Node ( object ) :
+   default = 'DEFAULT'
+  def __init__ ( self , children = None , connector = None , negated = False ) :
+ self . children = children [ : ] if children else [ ]
+ self . connector = connector or self . default
+ self . negated = negated
+     @ classmethod
+ def _new_instance ( cls , children = None , connector = None , negated = False ) :
+ obj = Node ( children , connector , negated )
+ obj . __class__ = cls
+ return obj
+   def __str__ ( self ) :
+          if self . negated :
+              return '(NOT (%s: %s))' % ( self . connector , ', ' . join ( [ str ( c ) for c  in self . children ] ) )
+  return '(%s: %s)' % ( self . connector , ', ' . join ( [ str ( c ) for c in  self . children ] ) )
+   def __repr__ ( self ) :
+          return "<%s: %s>" % ( self . __class__ . __name__ , self )
+   def __deepcopy__ ( self , memodict ) :
+ obj = Node ( connector = self . connector , negated = self . negated )
+ obj . __class__ = self . __class__
+ obj . children = copy . deepcopy ( self . children , memodict )
+ return obj
+   def __len__ ( self ) :
+ return len ( self . children )
+   def __bool__ ( self ) :
+ return bool ( self . children )
+   def __nonzero__ ( self ) :
+          return type ( self ) . __bool__ ( self )
+   def __contains__ ( self , other ) :
+ return other in self . children
+   def _prepare_data ( self , data ) :
+ return data
+   def add ( self , data , conn_type , squash = True ) :
+ if data in self . children :
+              return data
+  data = self . _prepare_data ( data )
+ if not squash :
+              self . children . append ( data )
+ return data
+  if self . connector == conn_type :
+               if ( isinstance ( data , Node ) and not data . negated  and ( data . connector == conn_type or len ( data ) == 1 ) ) :
+                        self . children . extend ( data . children )
+ return self
+  else :
+                    self . children . append ( data )
+ return data
+   else :
+              obj = self . _new_instance ( self . children , self . connector ,  self . negated )
+ self . connector = conn_type
+ self . children = [ obj , data ]
+ return data
+    def negate ( self ) :
+ self . negated = not self . negated
+  from __future__ import unicode_literals
+  from datetime import timedelta , tzinfo
+ import time
+ import warnings
+  from django . utils . deprecation import RemovedInDjango19Warning
+ from django . utils . encoding import force_str , force_text , DEFAULT_LOCALE_ENCODING
+  warnings . warn (  "django.utils.tzinfo will be removed in Django 1.9. "  "Use django.utils.timezone instead." ,  RemovedInDjango19Warning , stacklevel = 2 )
+        class FixedOffset ( tzinfo ) :
+ def __init__ ( self , offset ) :
+          warnings . warn (  "django.utils.tzinfo.FixedOffset will be removed in Django 1.9. "  "Use django.utils.timezone.get_fixed_timezone instead." ,  RemovedInDjango19Warning )
+ if isinstance ( offset , timedelta ) :
+              self . __offset = offset
+ offset = self . __offset . seconds // 60
+  else :
+              self . __offset = timedelta ( minutes = offset )
+   sign = '-' if offset < 0 else '+'
+ self . __name = "%s%02d%02d" % ( sign , abs ( offset ) / 60. , abs ( offset ) % 60 )
+   def __repr__ ( self ) :
+          return self . __name
+   def __getinitargs__ ( self ) :
+          return self . __offset ,
+   def utcoffset ( self , dt ) :
+          return self . __offset
+   def tzname ( self , dt ) :
+          return self . __name
+   def dst ( self , dt ) :
+          return timedelta ( 0 )
+           class LocalTimezone ( tzinfo ) :
+ def __init__ ( self , dt ) :
+          warnings . warn (  "django.utils.tzinfo.LocalTimezone will be removed in Django 1.9. "  "Use django.utils.timezone.get_default_timezone instead." ,  RemovedInDjango19Warning )
+ tzinfo . __init__ ( self )
+ self . __dt = dt
+ self . _tzname = self . tzname ( dt )
+   def __repr__ ( self ) :
+          return force_str ( self . _tzname )
+   def __getinitargs__ ( self ) :
+          return self . __dt ,
+   def utcoffset ( self , dt ) :
+          if self . _isdst ( dt ) :
+              return timedelta ( seconds = - time . altzone )
+  else :
+              return timedelta ( seconds = - time . timezone )
+    def dst ( self , dt ) :
+          if self . _isdst ( dt ) :
+              return timedelta ( seconds = - time . altzone ) - timedelta ( seconds = - time . timezone )
+  else :
+              return timedelta ( 0 )
+    def tzname ( self , dt ) :
+          is_dst = False if dt is None else self . _isdst ( dt )
+ try :
+              return force_text ( time . tzname [ is_dst ] , DEFAULT_LOCALE_ENCODING )
+  except UnicodeDecodeError :
+              return None
+    def _isdst ( self , dt ) :
+          tt = ( dt . year , dt . month , dt . day ,  dt . hour , dt . minute , dt . second ,  dt . weekday ( ) , 0 , 0 )
+ try :
+              stamp = time . mktime ( tt )
+  except ( OverflowError , ValueError ) :
+                        tt = ( 2037 , ) + tt [ 1 : ]
+ stamp = time . mktime ( tt )
+  tt = time . localtime ( stamp )
+ return tt . tm_isdst > 0
+from __future__ import absolute_import
+  import warnings
+  from django . utils . deprecation import RemovedInDjango19Warning
+  warnings . warn ( "django.utils.unittest will be removed in Django 1.9." ,  RemovedInDjango19Warning , stacklevel = 2 )
+  try :
+      from unittest2 import *
+  except ImportError :
+      from unittest import *
+from __future__ import unicode_literals
+  import datetime
+ import os
+ import subprocess
+   def get_version ( version = None ) :
+ version = get_complete_version ( version )
+       major = get_major_version ( version )
+  sub = ''
+ if version [ 3 ] == 'alpha' and version [ 4 ] == 0 :
+          git_changeset = get_git_changeset ( )
+ if git_changeset :
+              sub = '.dev%s' % git_changeset
+    elif version [ 3 ] != 'final' :
+          mapping = { 'alpha' : 'a' , 'beta' : 'b' , 'rc' : 'c' }
+ sub = mapping [ version [ 3 ] ] + str ( version [ 4 ] )
+   return str ( major + sub )
+    def get_major_version ( version = None ) :
+ version = get_complete_version ( version )
+ parts = 2 if version [ 2 ] == 0 else 3
+ major = '.' . join ( str ( x ) for x in version [ : parts ] )
+ return major
+    def get_complete_version ( version = None ) :
+ if version is None :
+          from django import VERSION as version
+  else :
+          assert len ( version ) == 5
+ assert version [ 3 ] in ( 'alpha' , 'beta' , 'rc' , 'final' )
+   return version
+    def get_git_changeset ( ) :
+  if hasattr ( get_git_changeset , 'cache' ) :
+          return get_git_changeset . cache
+   repo_dir = os . path . dirname ( os . path . dirname ( os . path . abspath ( __file__ ) ) )
+ git_log = subprocess . Popen ( 'git log --pretty=format:%ct --quiet -1 HEAD' ,  stdout = subprocess . PIPE , stderr = subprocess . PIPE ,  shell = True , cwd = repo_dir , universal_newlines = True )
+ timestamp = git_log . communicate ( ) [ 0 ]
+ try :
+          timestamp = datetime . datetime . utcfromtimestamp ( int ( timestamp ) )
+  except ValueError :
+          changeset = None
+  else :
+          changeset = timestamp . strftime ( '%Y%m%d%H%M%S' )
+   get_git_changeset . cache = changeset
+ return changeset
+  from xml . sax . saxutils import XMLGenerator
+   class SimplerXMLGenerator ( XMLGenerator ) :
+      def addQuickElement ( self , name , contents = None , attrs = None ) :
+ if attrs is None :
+              attrs = { }
+  self . startElement ( name , attrs )
+ if contents is not None :
+              self . characters ( contents )
+  self . endElement ( name )
